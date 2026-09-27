@@ -135,6 +135,8 @@ bursapay-public/
 │   ├── overview/                     # Ecosystem deep dives & platform pillar guides
 │   │   ├── ecosystem.md
 │   │   ├── step_by_step_guides.md    # Master step-by-step guides for Orgs, Public & Events
+│   │   ├── bursa_ai_and_knowledge_base.md # Customer-facing Bursa AI & Self-Service KB
+│   │   ├── whatsapp_bot_commerce.md  # WhatsApp bot: Pay dues, buy tickets & get receipts in chat
 │   │   ├── fees_and_pricing.md       # Transparent fee matrix & calculation examples
 │   │   ├── roles_and_permissions.md  # Deep breakdown of all 13 platform user roles
 │   │   ├── institutional_mode.md     # Academic V2, multi-category dues & Pay-for-Me
