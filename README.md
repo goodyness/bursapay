@@ -134,6 +134,7 @@ bursapay-public/
 ├── docs/
 │   ├── overview/                     # Ecosystem deep dives & platform pillar guides
 │   │   ├── ecosystem.md
+│   │   ├── step_by_step_guides.md    # Master step-by-step guides for Orgs, Public & Events
 │   │   ├── roles_and_permissions.md  # Deep breakdown of all 13 platform user roles
 │   │   ├── institutional_mode.md
 │   │   ├── public_mode.md

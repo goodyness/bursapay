@@ -1,61 +1,87 @@
-# Public Mode & Community Fundraising
+# Public Mode & Community Fundraising User Guide
 
-BursaPay's Public Mode empowers non-academic entities—such as non-governmental organizations (NGOs), alumni associations, faith communities, sports clubs, and business groups—to collect payments and run crowdfunding campaigns with zero technical setup.
-
----
-
-## Capabilities Overview
-
-### 1. Hosted Public Payment Links
-Organizations can create custom hosted payment pages accessible at:
-```
-https://bursapay.com/pay/<custom-slug>/
-```
-- **Custom Vanity Slugs**: Descriptive, branded URLs (e.g., `/pay/alumni-annual-reunion-2026`).
-- **Flexible Amounts**: Choose between fixed pricing (e.g., ₦10,000 association membership) or custom open amounts (e.g., donations).
-- **Custom Branding**: Upload organization banners, logos, and mission statements.
+**Public Mode** is designed for non-academic organizations—such as Non-Governmental Organizations (NGOs), Alumni Associations, Charities, Religious Bodies, Sports Clubs, and Event Drives—that need to collect payments or run fundraising campaigns from the general public without student login barriers.
 
 ---
 
-## Crowdfunding & Social Proof Features
+## 🌐 PART 1: Public Organization Setup
 
-When `is_fundraising=True`, the public payment link transforms into an interactive crowdfunding portal:
+### Step 1: Switch to Public Mode
+1. Register at `https://bursapay.com/register/` or switch your existing account at `/dashboard/org/switch-mode/` to **"Public Mode"**.
+2. Complete your Public Profile (`/dashboard/org/profile/`) with:
+   - **Organization Name** (e.g., *Green Earth Nigeria Foundation*).
+   - **CAC / Government Registration Number** (if registered).
+   - **Contact Information & Official Website**.
+   - **Paystack Subaccount Code** (Optional: for instant split payouts).
+
+### Step 2: Configure Bank Details
+Link your commercial bank account under `/dashboard/bank-setup/` for automated weekly or on-demand balance withdrawals.
+
+---
+
+## 🛠️ PART 2: How to Create a Public Payment Link
+
+Public organizations can create fixed-price payment links (e.g. membership dues, conference registration) or open crowdfunding drives.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 🎯 ALUMNI BUILDING FUNDRAISER 2026                          │
+│ 🚀 CREATE PUBLIC PAYMENT LINK                               │
 │                                                             │
-│ ₦4,250,000 raised of ₦5,000,000 goal                       │
-│ [██████████████████████████████████░░░░] 85%                │
-│                                                             │
-│ 👥 Wall of Fame:                                            │
-│ - Ade*** S. contributed ₦100,000 (2 mins ago)               │
-│ - Anonymous contributed ₦50,000 (15 mins ago)               │
-│ - Chi*** O. contributed ₦25,000 (1 hour ago)                │
+│ Title: 2026 Community Clean Water Crowdfund                 │
+│ Description: Help us drill 5 solar-powered boreholes in Oyo │
+│ Amount: [ ₦0.00 (Flexible / Open Donation)   ]              │
+│ Enable Fundraising Mode: [✔] Yes                            │
+│ Target Goal: [ ₦5,000,000.00                 ]              │
+│ Show Wall of Fame: [✔] Yes                                  │
+│ Live Contribution Toasts: [✔] Yes                           │
+│ Organizer Absorbs Fees: [✔] Yes                             │
+│ Custom Slug: bursapay.com/pay/clean-water-oyo-2026          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Crowdfunding Features:
-1. **Target Amount & Live Progress Bar**: Real-time percentage progress calculated from verified contributions.
-2. **Wall of Fame**: Displays recent contributors with privacy-preserving masking (e.g., `Ade*** S.`) to encourage social proof.
-3. **Anonymous Donation Mode**: Donors can opt out of public display with a single toggle.
-4. **Live Contribution Toasts**: Real-time on-page popup alerts celebrating new donations.
+### Step 1: Base Configuration
+1. Go to **Dashboard > Public Payments > Create** (`/dashboard/org/pay/create/`).
+2. Input the **Title**, **Description**, and **Custom URL Slug**.
+3. Choose Pricing Model:
+   - **Fixed Price:** Enter an exact amount (e.g., `₦10,000.00`).
+   - **Open / Crowdfunding Amount:** Check `is_fundraising=True` and set a minimum contribution (e.g., `₦500.00`).
+
+### Step 2: Enable Social Proof & Crowdfunding Tools
+- **Target Goal & Progress Bar (`target_amount`):** Automatically computes and displays the real-time completion percentage.
+- **Wall of Fame (`show_wall_of_fame`):** Displays recent donor names on the page.
+- **Live Donation Toasts (`show_contribution_toasts`):** Shows animated real-time popups when new contributions land.
+- **Fee Absorption (`organizer_bears_fees`):** When enabled, donors pay the exact intended sum, and fees are deducted from the organization wallet balance.
+
+### Step 3: Add Custom Data Fields
+Attach custom form questions to your public payment link:
+- **T-shirt Size** (Dropdown: S, M, L, XL, XXL)
+- **Home City / Chapter** (Text)
+- **Special Message / Dedication** (Textarea)
 
 ---
 
-## Split Payment Sessions (Installment Support)
+## 💳 PART 3: How Payers Complete a Public Payment
 
-For high-ticket contributions or event packages, BursaPay supports **Split Payment Sessions**:
-- Payers can break down large payments into manageable installments.
-- BursaPay issues a resumable session URL: `https://bursapay.com/p/resume/<session_id>/`.
-- The session tracks `total_amount`, `amount_paid`, and state transitions:
-  `pending` ➔ `partially_paid` ➔ `completed`.
+```
+1. Payer lands on URL ──► 2. Enters Donation Amount ──► 3. Toggles Anonymous / Wall of Fame
+                                                                      │
+                                                                      ▼
+6. Emailed PDF Receipt ◄── 5. Instant Payment Webhook ◄── 4. Card / USSD / Bank Transfer
+```
+
+### Step-by-Step Payer Flow:
+1. **Visit Link:** The payer visits `bursapay.com/pay/clean-water-oyo-2026`.
+2. **View Campaign:** Sees the mission description, progress bar (*₦3,250,000 of ₦5,000,000 raised*), and recent contributors.
+3. **Choose Amount:** Selects a suggested tier (₦5,000, ₦10,000, ₦50,000) or types a custom sum.
+4. **Privacy Options:** Can check **"Donate Anonymously"** (masks name on the public Wall of Fame as `Anonymous`).
+5. **Settle Payment:** Pays seamlessly via Debit Card, Pay with Transfer, USSD, or Apple Pay.
+6. **Confirmation & Receipt:** Receives instant on-screen success confirmation and an official PDF donation tax receipt via email.
 
 ---
 
-## Automated Split Payouts & Subaccounts
+## 🔄 PART 4: Split Payment Sessions (Installment Payments)
 
-Public organizations with their own Paystack subaccounts can configure **Instant Split Settlements**:
-- Route a percentage of incoming revenue directly to partner or department accounts.
-- Retain platform accounting records while automating co-organizer payouts.
-- Immutable audit logs captured under `WithdrawalRequest` with `instant_payout` status.
+For high-ticket community dues or building fund pledges:
+- Payers can activate **Installment Checkout**.
+- BursaPay issues a resumable session link: `https://bursapay.com/p/resume/<session_id>/`.
+- The session tracks payments progressively until the total target is satisfied.
