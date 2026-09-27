@@ -135,16 +135,22 @@ bursapay-public/
 │   ├── overview/                     # Ecosystem deep dives & platform pillar guides
 │   │   ├── ecosystem.md
 │   │   ├── step_by_step_guides.md    # Master step-by-step guides for Orgs, Public & Events
+│   │   ├── fees_and_pricing.md       # Transparent fee matrix & calculation examples
 │   │   ├── roles_and_permissions.md  # Deep breakdown of all 13 platform user roles
-│   │   ├── institutional_mode.md
-│   │   ├── public_mode.md
-│   │   ├── event_ticketing.md
-│   │   ├── vendor_marketplace.md
-│   │   └── finance_and_reconciliation.md
+│   │   ├── institutional_mode.md     # Academic V2, multi-category dues & Pay-for-Me
+│   │   ├── public_mode.md            # Public links, crowdfunding & Wall of Fame
+│   │   ├── event_ticketing.md        # Events, 5-min seat lock, Mini-registrars & QR passes
+│   │   ├── vendor_marketplace.md     # 4-phase KYC, escrow engine & milestone payouts
+│   │   ├── mobile_ecosystem.md       # Mobile apps, offline passes & push alerts
+│   │   ├── whatsapp_and_notifications.md # Automated WhatsApp receipts & reminders
+│   │   ├── support_and_verification.md # Public receipt verification & dispute SLAs
+│   │   ├── ambassador_program.md     # Referral rewards & campus ambassador program
+│   │   └── finance_and_reconciliation.md # Double-entry ledger & 3-way reconciliation
 │   ├── api/                          # REST API v1 complete specifications
 │   │   ├── all_endpoints_reference.md# Master catalog of all 45+ gateway endpoints
 │   │   ├── getting_started.md
 │   │   ├── security_and_scopes.md
+│   │   ├── sandbox_testing.md        # Test cards, simulated NUBANs & Seeding API
 │   │   ├── payments.md
 │   │   ├── virtual_accounts.md
 │   │   ├── payment_links.md
