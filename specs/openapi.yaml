@@ -1,0 +1,247 @@
+openapi: 3.0.3
+info:
+  title: BursaPay Developer Gateway API
+  description: Official REST API v1 for the BursaPay developer payment infrastructure platform.
+  version: 1.0.0
+  contact:
+    name: BursaPay Developer Support
+    email: developers@bursapay.com
+    url: https://bursapay.com
+servers:
+  - url: https://api.bursapay.com/api/v1
+    description: Production & Sandbox Gateway (switch via API Key)
+paths:
+  /health/:
+    get:
+      summary: Health check
+      description: Returns current operational status of the gateway.
+      responses:
+        '200':
+          description: Gateway operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /payments/initialize/:
+    post:
+      summary: Initialize a payment
+      description: Create a checkout session and retrieve authorization URL or access code.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          required: false
+          description: Unique UUID v4 for request deduplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - email
+              properties:
+                amount:
+                  type: number
+                  description: Payment amount in NGN
+                  example: 15000.00
+                email:
+                  type: string
+                  format: email
+                  example: customer@example.com
+                currency:
+                  type: string
+                  default: NGN
+                  example: NGN
+                reference:
+                  type: string
+                  example: ORD-2026-90214
+                callback_url:
+                  type: string
+                  format: uri
+                  example: https://yourapp.com/checkout/callback
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Payment session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      reference:
+                        type: string
+                      access_code:
+                        type: string
+                      authorization_url:
+                        type: string
+                      amount:
+                        type: string
+                      currency:
+                        type: string
+  /payments/verify/:
+    get:
+      summary: Verify payment status
+      description: Query real-time status of a transaction reference.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: reference
+          required: true
+          schema:
+            type: string
+          description: Payment reference
+      responses:
+        '200':
+          description: Payment verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      reference:
+                        type: string
+                      status:
+                        type: string
+                      amount:
+                        type: string
+                      currency:
+                        type: string
+                      net_amount:
+                        type: string
+                      paid_at:
+                        type: string
+  /virtual-accounts/:
+    post:
+      summary: Create dedicated virtual account
+      description: Provision a dedicated NUBAN bank account for a customer.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_reference
+              properties:
+                customer_reference:
+                  type: string
+                  example: CUST-99214
+                preferred_bank:
+                  type: string
+                  example: wema-bank
+                account_name:
+                  type: string
+                  example: ACME / Sarah Ade
+      responses:
+        '201':
+          description: Virtual account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      account_number:
+                        type: string
+                      bank_name:
+                        type: string
+                      currency:
+                        type: string
+                      status:
+                        type: string
+  /transfers/:
+    post:
+      summary: Initiate bank transfer
+      description: Transfer funds from wallet balance to any Nigerian bank account.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - bank_code
+                - account_number
+                - account_name
+              properties:
+                amount:
+                  type: number
+                  example: 50000.00
+                bank_code:
+                  type: string
+                  example: "058"
+                account_number:
+                  type: string
+                  example: "0123456789"
+                account_name:
+                  type: string
+                  example: TUNDE BAKARE
+                narration:
+                  type: string
+                  example: Vendor settlement
+      responses:
+        '201':
+          description: Transfer queued
+  /wallet/balance:
+    get:
+      summary: Get wallet balance
+      description: Returns available and pending balances.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Balance returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      currency:
+                        type: string
+                      available_balance:
+                        type: string
+                      pending_balance:
+                        type: string
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: APIKey

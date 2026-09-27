@@ -1,0 +1,184 @@
+{
+  "info": {
+    "name": "BursaPay Developer Gateway API v1",
+    "_postman_id": "bursapay-gateway-v1-collection",
+    "description": "Postman Collection for integrating with the BursaPay REST API v1.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initialize Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secretKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15000.00,\n  \"email\": \"customer@example.com\",\n  \"currency\": \"NGN\",\n  \"reference\": \"POSTMAN-ORD-001\",\n  \"callback_url\": \"https://yourapp.com/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/initialize/",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "initialize", ""]
+            }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secretKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/verify/?reference=POSTMAN-ORD-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "verify", ""],
+              "query": [
+                {
+                  "key": "reference",
+                  "value": "POSTMAN-ORD-001"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Virtual Accounts",
+      "item": [
+        {
+          "name": "Create Virtual Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secretKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_reference\": \"CUST-99214\",\n  \"preferred_bank\": \"wema-bank\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/virtual-accounts/",
+              "host": ["{{baseUrl}}"],
+              "path": ["virtual-accounts", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfers",
+      "item": [
+        {
+          "name": "Initiate Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secretKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50000.00,\n  \"bank_code\": \"058\",\n  \"account_number\": \"0123456789\",\n  \"account_name\": \"TUNDE BAKARE\",\n  \"narration\": \"Settlement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transfers/",
+              "host": ["{{baseUrl}}"],
+              "path": ["transfers", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Get Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secretKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "balance"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.bursapay.com/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "secretKey",
+      "value": "bp_sec_test_DEMO_KEY_HERE",
+      "type": "string"
+    }
+  ]
+}

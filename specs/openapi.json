@@ -1,0 +1,160 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "BursaPay Developer Gateway API",
+    "description": "Official REST API v1 for the BursaPay developer payment infrastructure platform.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "BursaPay Developer Support",
+      "email": "developers@bursapay.com",
+      "url": "https://bursapay.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.bursapay.com/api/v1",
+      "description": "Production & Sandbox Gateway"
+    }
+  ],
+  "paths": {
+    "/health/": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns operational status of the gateway.",
+        "responses": {
+          "200": {
+            "description": "Gateway operational",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/initialize/": {
+      "post": {
+        "summary": "Initialize a payment",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "email"],
+                "properties": {
+                  "amount": { "type": "number", "example": 15000.00 },
+                  "email": { "type": "string", "example": "customer@example.com" },
+                  "currency": { "type": "string", "example": "NGN" },
+                  "reference": { "type": "string", "example": "ORD-2026-90214" },
+                  "callback_url": { "type": "string", "example": "https://yourapp.com/callback" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment initialized successfully"
+          }
+        }
+      }
+    },
+    "/payments/verify/": {
+      "get": {
+        "summary": "Verify payment",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "reference",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment verified"
+          }
+        }
+      }
+    },
+    "/virtual-accounts/": {
+      "post": {
+        "summary": "Create dedicated virtual account",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_reference"],
+                "properties": {
+                  "customer_reference": { "type": "string", "example": "CUST-99214" },
+                  "preferred_bank": { "type": "string", "example": "wema-bank" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Virtual account created"
+          }
+        }
+      }
+    },
+    "/transfers/": {
+      "post": {
+        "summary": "Initiate bank transfer",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "bank_code", "account_number", "account_name"],
+                "properties": {
+                  "amount": { "type": "number", "example": 50000.00 },
+                  "bank_code": { "type": "string", "example": "058" },
+                  "account_number": { "type": "string", "example": "0123456789" },
+                  "account_name": { "type": "string", "example": "TUNDE BAKARE" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Transfer initiated" }
+        }
+      }
+    },
+    "/wallet/balance": {
+      "get": {
+        "summary": "Get wallet balance",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Balance retrieved" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "APIKey"
+      }
+    }
+  }
+}
