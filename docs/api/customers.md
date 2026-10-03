@@ -1,6 +1,6 @@
 # Customers API
 
-The Customers API provides a unified CRM interface to create customer entities, track lifetime transaction volume, attach reusable card tokens, and store KYC identity data.
+The Customers API provides a unified CRM interface to create customer entities, track lifetime transaction volume, attach reusable card tokens, manage dedicated virtual NUBAN accounts, and bulk import records.
 
 ---
 
@@ -58,11 +58,66 @@ curl -X POST https://api.bursapay.com/api/v1/customers/ \
 
 ---
 
-## 2. Customer Sub-Resources
+## 2. List & Retrieve Customers
 
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/api/v1/customers/<ref>/payments/` | `GET` | Retrieve complete transaction history for this customer. |
-| `/api/v1/customers/<ref>/saved-cards/` | `GET` | List tokenized payment cards available for 1-click charge. |
-| `/api/v1/customers/<ref>/virtual-accounts/` | `GET` | List dedicated NUBAN bank accounts linked to customer. |
-| `/api/v1/customers/import/` | `POST` | Bulk import hundreds of customer records simultaneously. |
+### List Customers
+- **Endpoint:** `GET /api/v1/customers/`
+- **Required Scope:** `payments:read`
+- **Query Params:** `search`, `page`, `page_size`
+
+### Retrieve Customer Detail
+- **Endpoint:** `GET /api/v1/customers/<customer_reference>/`
+- **Required Scope:** `payments:read`
+
+### Update Customer Profile
+- **Endpoint:** `PUT` / `PATCH /api/v1/customers/<customer_reference>/`
+- **Required Scope:** `payments:write`
+
+---
+
+## 3. Bulk Customer Import
+
+Import dozens or hundreds of customer records simultaneously.
+
+- **Endpoint:** `POST /api/v1/customers/import/`
+- **Required Scope:** `payments:write`
+
+### Request Body
+```json
+{
+  "customers": [
+    {
+      "email": "student1@funaab.edu.ng",
+      "first_name": "Bolu",
+      "last_name": "Ade",
+      "phone": "+2348011111111",
+      "metadata": {"matric": "20201001"}
+    },
+    {
+      "email": "student2@funaab.edu.ng",
+      "first_name": "Kehinde",
+      "last_name": "Ojo",
+      "phone": "+2348022222222",
+      "metadata": {"matric": "20201002"}
+    }
+  ]
+}
+```
+
+---
+
+## 4. Customer Sub-Resources
+
+### 4.1 List Customer Transaction History
+- **Endpoint:** `GET /api/v1/customers/<customer_reference>/payments/`
+- **Required Scope:** `payments:read`
+
+### 4.2 List Saved Cards (Tokenized Authorizations)
+- **Endpoint:** `GET /api/v1/customers/<customer_reference>/saved-cards/`
+- **Required Scope:** `payments:read`
+- **Response:** Array of reusable authorization codes (`AUTH_xxx`), card brand, last 4 digits, expiry date, issuing bank.
+
+### 4.3 List Customer Virtual Accounts
+- **Endpoint:** `GET /api/v1/customers/<customer_reference>/virtual-accounts/`
+- **Required Scope:** `payments:read`
+- **Response:** Dedicated virtual NUBAN accounts associated with this customer.

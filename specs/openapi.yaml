@@ -26,6 +26,23 @@ paths:
                   status:
                     type: string
                     example: ok
+  /ip-check/:
+    get:
+      summary: IP Allowlist Check
+      description: Check the caller IP address and verify if allowlisting is satisfied.
+      responses:
+        '200':
+          description: IP status check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client_ip:
+                    type: string
+                  is_allowed:
+                    type: boolean
+
   /payments/initialize/:
     post:
       summary: Initialize a payment
@@ -68,6 +85,11 @@ paths:
                   type: string
                   format: uri
                   example: https://yourapp.com/checkout/callback
+                channels:
+                  type: array
+                  items:
+                    type: string
+                  example: ["card", "bank_transfer", "ussd"]
                 metadata:
                   type: object
       responses:
@@ -76,67 +98,33 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      reference:
-                        type: string
-                      access_code:
-                        type: string
-                      authorization_url:
-                        type: string
-                      amount:
-                        type: string
-                      currency:
-                        type: string
+                $ref: '#/components/schemas/ApiResponse'
+
   /payments/verify/:
     get:
       summary: Verify payment status
-      description: Query real-time status of a transaction reference.
+      description: Query real-time status of a transaction by reference.
       security:
         - BearerAuth: []
       parameters:
         - in: query
           name: reference
-          required: true
           schema:
             type: string
-          description: Payment reference
+          required: true
+          description: Merchant transaction reference
       responses:
         '200':
-          description: Payment verified
+          description: Payment verification details
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      reference:
-                        type: string
-                      status:
-                        type: string
-                      amount:
-                        type: string
-                      currency:
-                        type: string
-                      net_amount:
-                        type: string
-                      paid_at:
-                        type: string
-  /virtual-accounts/:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /payments/charge-saved-card/:
     post:
-      summary: Create dedicated virtual account
-      description: Provision a dedicated NUBAN bank account for a customer.
+      summary: Charge saved card
+      description: Tokenized 1-click recurring card charge without redirection.
       security:
         - BearerAuth: []
       requestBody:
@@ -147,41 +135,134 @@ paths:
               type: object
               required:
                 - customer_reference
+                - authorization_code
+                - amount
               properties:
                 customer_reference:
                   type: string
                   example: CUST-99214
-                preferred_bank:
+                authorization_code:
                   type: string
-                  example: wema-bank
-                account_name:
+                  example: AUTH_8b91fa02c
+                amount:
+                  type: number
+                  example: 5000.00
+                reference:
                   type: string
-                  example: ACME / Sarah Ade
+                  example: REC-99120
+      responses:
+        '200':
+          description: Card charged successfully
+
+  /payments/bulk/:
+    post:
+      summary: Bulk payment initialization
+      description: Initialize multiple payments in a batch.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payments:
+                  type: array
+                  items:
+                    type: object
       responses:
         '201':
-          description: Virtual account created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      account_number:
-                        type: string
-                      bank_name:
-                        type: string
-                      currency:
-                        type: string
-                      status:
-                        type: string
-  /transfers/:
+          description: Bulk batch created
+
+  /payments/bulk/{batch_reference}/:
+    get:
+      summary: Query bulk payment batch status
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: batch_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Batch status
+
+  /payments/:
+    get:
+      summary: List payments
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of payments
+
+  /payments/{reference}/:
+    get:
+      summary: Retrieve payment detail
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment detail
+
+  /payments/{reference}/fulfillment/:
     post:
-      summary: Initiate bank transfer
-      description: Transfer funds from wallet balance to any Nigerian bank account.
+      summary: Mark payment fulfilled
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marked fulfilled
+
+  /payments/{reference}/schedule/:
+    delete:
+      summary: Cancel scheduled charge
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cancelled
+
+  /payment-intents/:
+    get:
+      summary: List payment intents
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of intents
+    post:
+      summary: Create payment intent (Auth & Hold)
       security:
         - BearerAuth: []
       requestBody:
@@ -192,56 +273,870 @@ paths:
               type: object
               required:
                 - amount
-                - bank_code
-                - account_number
-                - account_name
+                - email
               properties:
                 amount:
                   type: number
-                  example: 50000.00
-                bank_code:
+                email:
                   type: string
-                  example: "058"
-                account_number:
-                  type: string
-                  example: "0123456789"
-                account_name:
-                  type: string
-                  example: TUNDE BAKARE
-                narration:
-                  type: string
-                  example: Vendor settlement
       responses:
         '201':
-          description: Transfer queued
-  /wallet/balance:
+          description: Intent created
+
+  /payment-intents/{intent_reference}/capture/:
+    post:
+      summary: Capture payment intent
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: intent_reference
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount_to_capture:
+                  type: number
+      responses:
+        '200':
+          description: Intent captured
+
+  /payment-intents/{intent_reference}/cancel/:
+    post:
+      summary: Cancel payment intent
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: intent_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Intent voided
+
+  /customers/:
     get:
-      summary: Get wallet balance
-      description: Returns available and pending balances.
+      summary: List customers
       security:
         - BearerAuth: []
       responses:
         '200':
-          description: Balance returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
+          description: Customer list
+    post:
+      summary: Create customer profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - first_name
+                - last_name
+              properties:
+                email:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Customer created
+
+  /customers/import/:
+    post:
+      summary: Bulk import customers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customers:
+                  type: array
+                  items:
                     type: object
-                    properties:
-                      currency:
-                        type: string
-                      available_balance:
-                        type: string
-                      pending_balance:
-                        type: string
+      responses:
+        '201':
+          description: Customers imported
+
+  /customers/{customer_reference}/:
+    get:
+      summary: Retrieve customer
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer profile
+    put:
+      summary: Update customer
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer updated
+
+  /customers/{customer_reference}/payments/:
+    get:
+      summary: List customer transactions
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer transactions
+
+  /customers/{customer_reference}/saved-cards/:
+    get:
+      summary: List customer saved cards
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved card tokens
+
+  /customers/{customer_reference}/virtual-accounts/:
+    get:
+      summary: List customer virtual accounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer virtual accounts
+
+  /virtual-accounts/:
+    get:
+      summary: List virtual accounts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Virtual accounts list
+    post:
+      summary: Create dedicated virtual account
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_email
+                - bvn
+              properties:
+                customer_email:
+                  type: string
+                bvn:
+                  type: string
+                preferred_bank:
+                  type: string
+      responses:
+        '201':
+          description: Virtual account created
+
+  /transfers/:
+    get:
+      summary: List transfers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Outbound transfers list
+    post:
+      summary: Initiate single transfer
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - account_number
+                - bank_code
+              properties:
+                amount:
+                  type: number
+                account_number:
+                  type: string
+                bank_code:
+                  type: string
+                narration:
+                  type: string
+                reference:
+                  type: string
+      responses:
+        '201':
+          description: Transfer initiated
+
+  /transfers/bulk/:
+    post:
+      summary: Initiate bulk payouts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transfers:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Bulk transfer queued
+
+  /transfers/{reference}/:
+    get:
+      summary: Retrieve transfer status
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transfer detail
+
+  /payment-links/:
+    get:
+      summary: List payment links
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Payment links
+    post:
+      summary: Create payment link
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                amount:
+                  type: number
+                currency:
+                  type: string
+                custom_slug:
+                  type: string
+                redirect_url:
+                  type: string
+      responses:
+        '201':
+          description: Payment link created
+
+  /payment-links/bulk/:
+    post:
+      summary: Create bulk payment links
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Bulk payment links created
+
+  /payment-links/ab-test/:
+    post:
+      summary: Create A/B test
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: A/B experiment initialized
+
+  /payment-links/{link_code}/:
+    get:
+      summary: Retrieve payment link
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: link_code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Link metadata
+
+  /payment-links/{link_code}/analytics/:
+    get:
+      summary: Payment link conversion metrics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: link_code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Analytics data
+
+  /payment-links/{link_code}/qr/:
+    get:
+      summary: Payment link QR Code
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: link_code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: QR image
+
+  /subscriptions/plans/:
+    get:
+      summary: List subscription plans
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Plan list
+    post:
+      summary: Create subscription plan
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - amount
+                - interval
+              properties:
+                name:
+                  type: string
+                amount:
+                  type: number
+                interval:
+                  type: string
+      responses:
+        '201':
+          description: Plan created
+
+  /subscriptions/:
+    get:
+      summary: List subscriptions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Subscription list
+    post:
+      summary: Subscribe customer
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_email
+                - plan_code
+              properties:
+                customer_email:
+                  type: string
+                plan_code:
+                  type: string
+      responses:
+        '201':
+          description: Subscribed
+
+  /subscriptions/{id}/pause/:
+    post:
+      summary: Pause subscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paused
+
+  /subscriptions/{id}/resume/:
+    post:
+      summary: Resume subscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Resumed
+
+  /subscriptions/{id}/cancel/:
+    post:
+      summary: Cancel subscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cancelled
+
+  /invoices/:
+    get:
+      summary: List invoices
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Invoices
+    post:
+      summary: Create itemized invoice
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_email
+                - items
+              properties:
+                customer_email:
+                  type: string
+                due_date:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Invoice created
+
+  /invoices/{reference}/:
+    get:
+      summary: Retrieve invoice detail & PDF
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invoice detail
+
+  /refunds/:
+    get:
+      summary: List refunds
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Refund list
+    post:
+      summary: Issue refund
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payment_reference
+              properties:
+                payment_reference:
+                  type: string
+                amount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '201':
+          description: Refund processed
+
+  /refunds/{refund_reference}/:
+    get:
+      summary: Retrieve refund status
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: refund_reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Refund detail
+
+  /disputes/:
+    get:
+      summary: List disputes
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Disputes list
+
+  /disputes/{reference}/:
+    get:
+      summary: Retrieve dispute details
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dispute detail
+    post:
+      summary: Submit dispute evidence
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evidence submitted
+
+  /wallet/balance:
+    get:
+      summary: Check wallet balance
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wallet balance summary
+
+  /wallet/ledger/:
+    get:
+      summary: Audit trail ledger
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Double-entry ledger
+
+  /wallet/settlements/:
+    get:
+      summary: List settlements
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Settlement batches
+
+  /wallet/settlements/{reference}/:
+    get:
+      summary: Retrieve settlement detail
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Settlement detail
+
+  /events/stream/:
+    get:
+      summary: Real-time Server-Sent Events (SSE) stream
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Event stream (text/event-stream)
+
+  /webhooks/events/:
+    get:
+      summary: List supported webhook event types
+      responses:
+        '200':
+          description: Event catalog
+
+  /webhooks/test/:
+    post:
+      summary: Dispatch test webhook
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dispatched
+
+  /webhooks/dead-letters/:
+    get:
+      summary: List dead letter queue events
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dead letter list
+
+  /webhooks/dead-letters/{id}/replay/:
+    post:
+      summary: Replay dead letter event
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Replayed
+
+  /webhooks/:
+    get:
+      summary: List webhooks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Webhook endpoints
+    post:
+      summary: Register webhook endpoint
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - events
+              properties:
+                url:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Webhook registered
+
+  /webhooks/{webhook_id}/:
+    get:
+      summary: Retrieve webhook
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Webhook detail
+    put:
+      summary: Update webhook
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete webhook
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+
+  /webhooks/{webhook_id}/logs/:
+    get:
+      summary: List webhook delivery logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: webhook_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Delivery attempts
+
+  /webhooks/logs/{log_id}/retry/:
+    post:
+      summary: Retry webhook delivery attempt
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: log_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Retried
+
+  /analytics/:
+    get:
+      summary: High-level analytics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Analytics
+
+  /reconciliation/:
+    get:
+      summary: Reconciliation audit
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Reconciliation audit
+
+  /reconciliation/export/:
+    get:
+      summary: Export reconciliation CSV
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: CSV file
+
+  /sandbox/seed/:
+    post:
+      summary: Seed sandbox data
+      description: Available only in test mode
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Seeded mock records
+
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: APIKey
+      bearerFormat: BursaPay API Key (bp_sec_...)
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object

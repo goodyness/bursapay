@@ -22,6 +22,8 @@ Generate a secure checkout session URL or access code for client-side popup chec
 | `callback_url`| `string` | No | URL to redirect customer upon payment completion. |
 | `channels` | `array` | No | Supported payment channels: `["card", "bank_transfer", "ussd", "qr"]`. |
 | `metadata` | `object` | No | Key-value dictionary stored with the transaction. |
+| `charge_at` | `string` | No | ISO 8601 timestamp for scheduled future charge. |
+| `splits` | `array` | No | Multi-party split payment rules with subaccounts and percentages. |
 
 ### Example Request
 
@@ -29,6 +31,7 @@ Generate a secure checkout session URL or access code for client-side popup chec
 curl -X POST https://api.bursapay.com/api/v1/payments/initialize/ \
   -H "Authorization: Bearer bp_sec_test_DEMO_KEY_HERE" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 7b31e9a2-4a5f-4a3d-a4e9-9d0a1b2c3d4e" \
   -d '{
     "amount": 15000.00,
     "email": "sarah.ade@example.com",
@@ -117,9 +120,22 @@ curl -X GET "https://api.bursapay.com/api/v1/payments/verify/?reference=BP-ORD-9
 
 ---
 
-## 3. Charge Saved Card (Tokenized Recurring Charge)
+## 3. List & Retrieve Payments
 
-Charge a customer's previously tokenized card authorization without requiring interactive checkout.
+### List Payments
+- **Endpoint:** `GET /api/v1/payments/`
+- **Required Scope:** `payments:read`
+- **Query Params:** `status` (`success`, `failed`, `pending`), `page`, `page_size`, `from_date`, `to_date`.
+
+### Retrieve Payment Detail
+- **Endpoint:** `GET /api/v1/payments/<reference>/`
+- **Required Scope:** `payments:read`
+
+---
+
+## 4. Charge Saved Card (Tokenized 1-Click Recurring Charge)
+
+Charge a customer's previously saved card authorization without requiring an interactive checkout redirect.
 
 - **Endpoint:** `POST /api/v1/payments/charge-saved-card/`
 - **Required Scope:** `payments:write`
@@ -128,23 +144,35 @@ Charge a customer's previously tokenized card authorization without requiring in
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `authorization_code`| `string` | **Yes** | Reusable card token obtained from previous payment verification. |
-| `email` | `string` | **Yes** | Customer email. |
-| `amount` | `number` | **Yes** | Amount to charge. |
-| `reference` | `string` | No | Custom transaction reference. |
+| `customer_reference`| `string` | **Yes** | BursaPay customer reference (`CUST-xxx`). |
+| `authorization_code`| `string` | **Yes** | Tokenized card authorization (`AUTH_xxx`). |
+| `amount` | `number` | **Yes** | Amount to charge in NGN. |
+| `reference` | `string` | No | Custom merchant reference. |
 
 ---
 
-## 4. Payment Intents (2-Step Authorize & Capture)
+## 5. Direct Authorization Charge
 
-For marketplaces, hotel booking, and ride-hailing where funds must be held and captured only after service delivery.
+- **Endpoint:** `POST /api/v1/payments/charge/`
+- **Required Scope:** `payments:write`
 
-- **Create Intent:** `POST /api/v1/payment-intents/`
-- **Capture Intent:** `POST /api/v1/payment-intents/<intent_reference>/capture/`
-- **Cancel Intent:** `POST /api/v1/payment-intents/<intent_reference>/cancel/`
+Charge an authorization code directly with email and amount.
 
-### Capture Example
+---
 
+## 6. Payment Intents (2-Step Authorize & Delayed Capture)
+
+For marketplaces, car rentals, and escrow workflows where funds must be authorized, held, and captured later.
+
+| Action | Method | Endpoint | Description |
+|---|---|---|---|
+| **Create Intent** | `POST` | `/api/v1/payment-intents/` | Create authorization hold intent. |
+| **List Intents** | `GET` | `/api/v1/payment-intents/` | List merchant payment intents. |
+| **Retrieve Intent**| `GET` | `/api/v1/payment-intents/<intent_ref>/` | Retrieve hold status and details. |
+| **Capture Intent** | `POST` | `/api/v1/payment-intents/<intent_ref>/capture/` | Capture held funds to wallet. |
+| **Cancel Intent**  | `POST` | `/api/v1/payment-intents/<intent_ref>/cancel/`  | Release/void held funds. |
+
+### Capture Example Request
 ```bash
 curl -X POST https://api.bursapay.com/api/v1/payment-intents/PI-991204/capture/ \
   -H "Authorization: Bearer bp_sec_live_DEMO_KEY_HERE" \
@@ -153,3 +181,44 @@ curl -X POST https://api.bursapay.com/api/v1/payment-intents/PI-991204/capture/ 
     "amount_to_capture": 12500.00
   }'
 ```
+
+---
+
+## 7. Bulk Payment Initialization
+
+Initialize up to 100 payments simultaneously in a single API call.
+
+- **Endpoint:** `POST /api/v1/payments/bulk/`
+- **Required Scope:** `payments:write`
+- **Status Endpoint:** `GET /api/v1/payments/bulk/<batch_reference>/`
+
+### Request Body
+```json
+{
+  "payments": [
+    {
+      "amount": 5000.00,
+      "email": "student1@unilag.edu.ng",
+      "reference": "DUES-2026-001"
+    },
+    {
+      "amount": 5000.00,
+      "email": "student2@unilag.edu.ng",
+      "reference": "DUES-2026-002"
+    }
+  ]
+}
+```
+
+---
+
+## 8. Cancel Scheduled Payment & Mark Order Fulfillment
+
+### Cancel Scheduled Charge
+- **Endpoint:** `DELETE /api/v1/payments/<reference>/schedule/`
+- **Required Scope:** `payments:write`
+
+### Mark Fulfillment
+- **Endpoint:** `POST /api/v1/payments/<reference>/fulfillment/`
+- **Required Scope:** `payments:write`
+- **Payload:** `{"fulfillment_status": "fulfilled", "tracking_number": "DHL-981203"}`

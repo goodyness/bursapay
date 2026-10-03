@@ -1,64 +1,56 @@
 # Webhooks Overview & Architecture
 
-Webhooks notify your backend systems asynchronously in real-time whenever an event occurs on BursaPay (e.g. payment received, virtual account credited, transfer completed, dispute opened).
+BursaPay uses webhooks to notify your backend asynchronously whenever critical events occur on your account — such as successful payments, dedicated virtual account credits, dispute alerts, subscription billing renewals, and outbound transfer status updates.
 
 ---
 
-## Webhook Delivery Architecture
+## Webhook Delivery Characteristics
 
-```
-┌────────────────────────┐
-│ BursaPay Event Triggers│ (e.g. Card Payment, NIP Transfer)
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ Async Celery Dispatcher│ ── Signs payload with HMAC-SHA256
-└───────────┬────────────┘
-            │
-            ├───────────────► Merchant Webhook URL (`POST https://yourdomain.com/webhooks/`)
-            │                 └─ Returns `HTTP 200 OK`
-            │
-            ▼ (If merchant server fails or times out)
-┌────────────────────────┐
-│ Exponential Backoff    │ (Retries at 5m, 15m, 1h, 6h, 24h)
-└───────────┬────────────┘
-            │
-            ▼ (After max retries)
-┌────────────────────────┐
-│ Dead Letter Queue (DLQ)│ ── Inspect and replay anytime via API or Portal
-└────────────────────────┘
-```
+- **Transport:** HTTP `POST` requests with a `Content-Type: application/json` header.
+- **Security:** Every payload is signed with an HMAC SHA-256 signature in the `X-BursaPay-Signature` and timestamped in `X-BursaPay-Timestamp`.
+- **Automatic Retry Policy:** Exponential backoff with jitter across **5 retry attempts** (`1m`, `5m`, `15m`, `1h`, `6h`).
+- **Dead Letter Queue (DLQ):** Webhooks that exhaust all 5 retries are captured in the merchant's Dead Letter Queue for inspection and manual 1-click replay.
+- **Response Expectation:** Your endpoint must return an HTTP status code in the `2xx` range (such as `200 OK` or `202 Accepted`) within **5 seconds**.
 
 ---
 
-## Delivery Guarantees
+## 1. Webhook Management Endpoints
 
-1. **At-Least-Once Delivery**: BursaPay guarantees events will be delivered at least once. Your endpoint handler should be idempotent (deduplicating using `event.data.reference` or `event.id`).
-2. **Timeout Window**: Webhook deliveries timeout after **10 seconds**. Ensure your handler processes heavy tasks asynchronously (e.g., in a background worker queue) and immediately returns `HTTP 200 OK`.
-3. **Dead Letter Queue (DLQ)**: Failed deliveries after 5 exponential backoff retries are preserved in the DLQ (`GET /api/v1/webhooks/dead-letters/`) and can be replayed at any time.
+| Method | Endpoint | Required Scope | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/webhooks/` | `webhooks:write` | List configured webhook endpoints. |
+| `POST` | `/api/v1/webhooks/` | `webhooks:write` | Register a new webhook endpoint URL. |
+| `GET` | `/api/v1/webhooks/<id>/` | `webhooks:write` | Retrieve webhook endpoint details & secret. |
+| `PUT` / `PATCH` | `/api/v1/webhooks/<id>/` | `webhooks:write` | Update target URL or subscribed events. |
+| `DELETE` | `/api/v1/webhooks/<id>/` | `webhooks:write` | Remove webhook endpoint. |
+| `POST` | `/api/v1/webhooks/test/` | `webhooks:write` | Dispatch mock test event to endpoint. |
 
 ---
 
-## Configuring Webhooks via API
+## 2. Webhook Delivery Logs & Manual Retry
 
-### Register a Webhook Endpoint
+Inspect historical delivery attempts and HTTP response status codes:
 
-- **Endpoint:** `POST /api/v1/webhooks/`
-- **Required Scope:** `webhooks:write`
+- **List Logs for Webhook:** `GET /api/v1/webhooks/<id>/logs/`
+- **View Log Payload & Response:** `GET /api/v1/webhooks/logs/<log_id>/`
+- **Manually Retry Specific Delivery:** `POST /api/v1/webhooks/logs/<log_id>/retry/`
 
-```bash
-curl -X POST https://api.bursapay.com/api/v1/webhooks/ \
-  -H "Authorization: Bearer bp_sec_live_DEMO_KEY_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://api.yourdomain.com/v1/bursapay-webhooks",
-    "events": [
-      "payment.success",
-      "virtual_account.credited",
-      "transfer.success",
-      "dispute.created"
-    ],
-    "description": "Production Webhook Ingestion"
-  }'
-```
+---
+
+## 3. Dead Letter Queue (DLQ)
+
+When your server is temporarily down or returning 500 errors across all automatic retries, failed events are preserved in the DLQ:
+
+- **List Dead Letters:** `GET /api/v1/webhooks/dead-letters/`
+- **Replay Dead Letter:** `POST /api/v1/webhooks/dead-letters/<pk>/replay/`
+
+---
+
+## 4. Real-Time Server-Sent Events (SSE) Stream
+
+For low-latency local development or reactive browser UIs without public webhook URLs, BursaPay provides an authenticated SSE stream:
+
+- **Endpoint:** `GET /api/v1/events/stream/`
+- **Required Scope:** `payments:read`
+- **Header:** `Authorization: Bearer bp_sec_...`
+- **Guide:** [Read SSE Stream Documentation](sse_realtime_stream.md)

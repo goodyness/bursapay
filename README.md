@@ -10,7 +10,7 @@
 
 **Simplified, high-reliability payment infrastructure for institutions, public organizations, event organizers, service marketplaces, and modern developers.**
 
-[Explore Docs](docs/overview/ecosystem.md) · [API Reference](docs/api/getting_started.md) · [Webhooks Guide](docs/webhooks/overview.md) · [Python SDK](docs/tools/python_sdk.md) · [JS SDK](docs/tools/js_sdk.md) · [BursaPay CLI](docs/tools/cli.md) · [OpenAPI Spec](specs/openapi.yaml)
+[Explore Docs](docs/overview/ecosystem.md) · [API Reference](docs/api/getting_started.md) · [Webhooks Guide](docs/webhooks/overview.md) · [Python SDK](docs/tools/python_sdk.md) · [JS SDK](docs/tools/js_sdk.md) · [Go SDK](docs/tools/go_sdk.md) · [PHP SDK](docs/tools/php_sdk.md) · [Inline Popup](docs/tools/inline_checkout.md) · [CLI](docs/tools/cli.md) · [OpenAPI Spec](specs/openapi.yaml)
 
 </div>
 
@@ -110,11 +110,14 @@ curl -X GET "https://api.bursapay.com/api/v1/payments/verify/?reference=ORD-2026
 
 ## 📦 Official Developer Tooling
 
-| Package / Tool | Language / Runtime | Installation | Description |
-|---|---|---|---|
-| **Python SDK** | Python 3.8+ | `pip install bursapay-sdk` | Official Python client with sync & async (`httpx`) support. |
-| **JavaScript SDK** | Node.js 18+ / Browser | `npm install bursapay-sdk` | TypeScript-first library supporting ESM, CommonJS, and types. |
-| **BursaPay CLI** | Node.js (CLI) | `npm install -g bursapay-cli` | Webhook tunneling via SSE, signature verification, sandbox mocking. |
+| Package / Tool | Language / Runtime | Installation | Description | Documentation |
+|---|---|---|---|---|
+| **Python SDK** | Python 3.8+ | `pip install bursapay-sdk` | Official client with sync (`BursaPay`) & async (`AsyncBursaPay`) support. | [Python Guide](docs/tools/python_sdk.md) |
+| **JavaScript / TS SDK** | Node.js 18+ / Browser | `npm install bursapay-sdk` | TypeScript-first library supporting ESM, CommonJS, and inline popup checkout. | [JS/TS Guide](docs/tools/js_sdk.md) |
+| **Go SDK** | Go 1.18+ | `go get github.com/goodyness/bursapay-go-sdk` | Idiomatic Go client with `context.Context` and HMAC signature validation. | [Go Guide](docs/tools/go_sdk.md) |
+| **PHP SDK** | PHP 7.4 / 8.x | `composer require bursapay/bursapay-php` | PSR-compliant client for Laravel, Symfony, WordPress, and standard PHP. | [PHP Guide](docs/tools/php_sdk.md) |
+| **Inline Web Popup** | Browser JS | `<script src="https://api.bursapay.com/bursapay-embed.js">` | Drop-in modal checkout iframe overlay for web storefronts. | [Inline Guide](docs/tools/inline_checkout.md) |
+| **BursaPay CLI** | Node.js (CLI) | `npm install -g bursapay-cli` | Webhook tunneling via SSE, signature verification, sandbox mocking. | [CLI Guide](docs/tools/cli.md) |
 
 ### CLI in Action:
 ```bash
@@ -153,32 +156,39 @@ bursapay-public/
 │   │   ├── getting_started.md
 │   │   ├── security_and_scopes.md
 │   │   ├── sandbox_testing.md        # Test cards, simulated NUBANs & Seeding API
-│   │   ├── payments.md
-│   │   ├── virtual_accounts.md
-│   │   ├── payment_links.md
-│   │   ├── subscriptions.md
-│   │   ├── invoices.md
-│   │   ├── transfers_payouts.md
-│   │   ├── refunds_and_disputes.md
-│   │   ├── customers.md
-│   │   └── wallet_and_settlements.md
+│   │   ├── payments.md               # Intialize, Verify, Saved Cards, Intents, Bulk, Schedule
+│   │   ├── virtual_accounts.md       # Dedicated NUBAN accounts
+│   │   ├── payment_links.md          # Hosted links, bulk links, QR codes & A/B testing
+│   │   ├── subscriptions.md          # Recurring plans, pause, resume & cancel
+│   │   ├── invoices.md               # Itemized invoicing & PDF receipts
+│   │   ├── transfers_payouts.md      # Single & bulk bank payouts
+│   │   ├── refunds_and_disputes.md   # Chargeback defense & automated refunds
+│   │   ├── customers.md              # Customer CRM, bulk import, saved cards & history
+│   │   └── wallet_and_settlements.md # Balances, ledger, analytics & 3-way reconciliation
 │   ├── webhooks/                     # Webhook integration & security
-│   │   ├── overview.md
-│   │   ├── signatures.md
-│   │   ├── event_catalog.md
-│   │   └── sse_realtime_stream.md
-│   └── tools/                        # SDKs and CLI documentation
-│       ├── python_sdk.md
-│       ├── js_sdk.md
-│       └── cli.md
+│   │   ├── overview.md               # Architecture, retries, DLQ & delivery logs
+│   │   ├── signatures.md             # HMAC SHA-256 verification in all languages
+│   │   ├── event_catalog.md          # Exhaustive list of 25+ event types
+│   │   └── sse_realtime_stream.md    # Real-time event stream via Server-Sent Events
+│   └── tools/                        # SDKs, CLI and Popup documentation
+│       ├── python_sdk.md             # Python sync & async SDK guide
+│       ├── js_sdk.md                 # Node.js & TypeScript SDK guide
+│       ├── go_sdk.md                 # Go SDK integration guide
+│       ├── php_sdk.md                # PHP SDK integration guide
+│       ├── inline_checkout.md        # Web modal popup checkout integration
+│       └── cli.md                    # Developer CLI guide
 ├── specs/
-│   ├── openapi.yaml                  # OpenAPI 3.0.3 YAML Schema
+│   ├── openapi.yaml                  # OpenAPI 3.0.3 YAML Schema (45+ endpoints)
 │   ├── openapi.json                  # OpenAPI 3.0.3 JSON Schema
 │   └── postman_collection.json       # 1-Click Postman Collection
 ├── examples/                         # Standalone runnable code starters
 │   ├── node-express/                 # Express.js checkout + webhook handler
 │   ├── python-fastapi/               # FastAPI payment intent + signature validation
-│   └── html-checkout/                # Pure client-side checkout popup demo
+│   ├── html-checkout/                # Pure client-side checkout popup demo
+│   ├── vendor-payouts-go/            # Go bulk payouts & webhook listener
+│   ├── payment-links-php/            # PHP dynamic payment links starter
+│   ├── saas-subscriptions-python/    # Python recurring SaaS subscriptions demo
+│   └── webhook-server-node/          # Node.js webhook receiver with HMAC validation
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 └── LICENSE
@@ -191,7 +201,7 @@ bursapay-public/
 BursaPay is built with defense-in-depth:
 - **Hashed API Credentials**: Secret keys are stored as SHA-256 hashes and displayed only once upon creation.
 - **HMAC SHA-256 Webhooks**: Every webhook dispatch carries an `X-BursaPay-Signature` header signed with your account secret.
-- **Granular Scopes**: Restrict API keys to specific permissions (`payments:read`, `transfers:write`, `refunds:write`).
+- **Granular Scopes**: Restrict API keys to specific permissions (`payments:read`, `transfers:write`, `refunds:write`, etc.).
 - **IP Allowlisting**: Optional CIDR/IP restriction on server-to-server API calls.
 - **Idempotency**: Prevent accidental double-charges on network retries using `Idempotency-Key`.
 

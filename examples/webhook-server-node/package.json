@@ -1,0 +1,10 @@
+{
+  "name": "bursapay-webhook-server-node",
+  "version": "1.0.0",
+  "description": "Express webhook receiver with HMAC SHA-256 signature verification",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "bursapay-sdk": "^0.2.0"
+  }
+}

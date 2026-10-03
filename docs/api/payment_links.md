@@ -1,6 +1,6 @@
 # Payment Links & A/B Testing API
 
-The Payment Links API enables merchants to programmatically generate hosted checkout pages, QR codes, and run split-test experiments without building custom payment UI.
+The Payment Links API enables merchants to programmatically generate hosted checkout pages, bulk links, QR codes, and run split-test experiments without building custom payment UI.
 
 ---
 
@@ -20,6 +20,7 @@ The Payment Links API enables merchants to programmatically generate hosted chec
 | `custom_slug` | `string` | No | Custom vanity path (e.g. `tech-summit-pass`). Auto-generated if omitted. |
 | `redirect_url`| `string` | No | Redirection destination after successful payment. |
 | `is_reusable` | `boolean`| No | Whether multiple payers can use the link (`true` by default). |
+| `expires_at`  | `string` | No | ISO 8601 expiry timestamp. |
 
 ### Example Request
 
@@ -39,16 +40,44 @@ curl -X POST https://api.bursapay.com/api/v1/payment-links/ \
 
 ---
 
-## 2. Generate Payment Link QR Code
+## 2. Bulk Payment Link Creation
+
+Create multiple payment links in a single request.
+
+- **Endpoint:** `POST /api/v1/payment-links/bulk/`
+- **Required Scope:** `payments:write`
+
+### Request Body
+```json
+{
+  "links": [
+    {
+      "title": "Early Bird Ticket",
+      "amount": 10000.00,
+      "custom_slug": "early-bird-pass"
+    },
+    {
+      "title": "VIP All-Access Ticket",
+      "amount": 35000.00,
+      "custom_slug": "vip-all-access"
+    }
+  ]
+}
+```
+
+---
+
+## 3. Generate Payment Link QR Code
 
 Generate a downloadable high-resolution QR image pointing directly to the payment page.
 
 - **Endpoint:** `GET /api/v1/payment-links/<link_code>/qr/`
 - **Required Scope:** `payments:read`
+- **Response:** PNG QR Code image stream or data URI.
 
 ---
 
-## 3. Link Analytics & Conversion Tracking
+## 4. Link Analytics & Conversion Tracking
 
 Inspect views, unique visits, conversion rate, and total volume collected per payment link.
 
@@ -73,9 +102,30 @@ Inspect views, unique visits, conversion rate, and total volume collected per pa
 
 ---
 
-## 4. Payment Link A/B Split Testing
+## 5. Payment Link A/B Split Testing
 
-Create an automated traffic split between two different checkout link variants to optimize conversion.
+Create an automated traffic split between two different checkout link variants to optimize conversion rate.
 
 - **Endpoint:** `POST /api/v1/payment-links/ab-test/`
 - **Required Scope:** `payments:write`
+
+### Request Body
+```json
+{
+  "name": "Checkout Copy Optimization Experiment",
+  "link_a_id": 102,
+  "link_b_id": 105,
+  "traffic_split": 50
+}
+```
+
+---
+
+## 6. List, Retrieve, Update & Deactivate
+
+| Action | Method | Endpoint | Required Scope |
+|---|---|---|---|
+| **List Links** | `GET` | `/api/v1/payment-links/` | `payments:read` |
+| **Retrieve Link** | `GET` | `/api/v1/payment-links/<link_code>/` | `payments:read` |
+| **Update Link** | `PUT` / `PATCH` | `/api/v1/payment-links/<link_code>/` | `payments:write` |
+| **Deactivate Link** | `DELETE` | `/api/v1/payment-links/<link_code>/` | `payments:write` |

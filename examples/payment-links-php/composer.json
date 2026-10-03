@@ -1,0 +1,9 @@
+{
+  "name": "bursapay/payment-links-php-demo",
+  "description": "BursaPay Payment Links Demo in PHP",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "bursapay/bursapay-php": "^0.2"
+  }
+}
